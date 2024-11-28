@@ -1,0 +1,23 @@
+{
+  "name": "voiced",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AvoKouyoumijian/voiced.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AvoKouyoumijian/voiced/issues"
+  },
+  "homepage": "https://github.com/AvoKouyoumijian/voiced#readme",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
