@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () =>
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        link: "https://www.freecodecamp.org/news/how-to-parse-pdfs-at-scale-in-nodejs-what-to-do-and-what-not-to-do-541df9d2eec1/",
+        link: "https://www.wagslane.dev/",
       }),
     });
     // return error if api throws one
