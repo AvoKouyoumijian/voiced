@@ -1,18 +1,10 @@
-import {
-  crawlPageBody,
-  getURLsFromHTML,
-  normalizeURL,
-  unmarkupContent,
-} from "./crawler";
+import { crawlPageBody, getURLsFromHTML } from "./crawler";
 
 import child_process from "child_process";
-import fileUpload from "express-fileupload";
 import { Response } from "express-serve-static-core";
-import fs, { read } from "fs";
 import { Transform, Readable, Writable, pipeline } from "node:stream";
 import { TransformCallback } from "stream";
 import { PdfReader } from "pdfreader";
-import PdfParse from "pdf-parse";
 
 // trim invalid characters and new lines off a string
 class TrimText extends Transform {
@@ -29,14 +21,21 @@ class TrimText extends Transform {
     callback();
   }
 }
-// given a valid URL converts the webpages bodies text to voice stored in res
+
+/**
+ * given a valid URL converts the webpages bodies text to voice stored in res
+ * @param URL
+ * @param res
+ * @returns voiced text to res
+ */
 export const voiceWebPage = async (URL: string, res: Response) => {
+  // read a given urls body to the readable stream
   const pageContent = new Readable({
     read() {},
   });
-
   crawlPageBody(URL, pageContent);
 
+  // tirm the text of the url
   const trimText = new TrimText();
   pageContent.pipe(trimText);
 
@@ -45,27 +44,34 @@ export const voiceWebPage = async (URL: string, res: Response) => {
   return;
 };
 
+/**
+ * given a valid pdf file converts its text to
+ * @param file
+ * @param res
+ * @returns voiced text to stdout
+ */
 export const voicePdf = async (file: any, res: Response) => {
-  // get the text of the pdf
-
-  const trimText = new TrimText();
-
+  // parse the pdf file
+  const pdfContent = new Readable({
+    read() {},
+  });
   new PdfReader().parseBuffer(file.data, (err, item) => {
     if (err) console.error("Error parsing PDF:", err);
-    else if (!item) {
-      console.warn("end of buffer");
-      trimText.push(null);
-    } else if (item.text) trimText.push(item.text);
+    else if (!item) pdfContent.push(null);
+    else if (item.text) pdfContent.push(item.text);
   });
 
-  // trimText.pipe(process.stdout);
-
   // pipe the voice of the text to res
-  spawnVoice(trimText, res);
+  spawnVoice(pdfContent, res);
   return;
 };
 
-const spawnVoice = (stream: Transform, res: Response) => {
+/**
+ * helper function used to process text to voice
+ * @param stream
+ * @param res
+ */
+const spawnVoice = (stream: Transform | Readable, res: Response) => {
   // call another instance that converts text to voice
   const espeak = child_process.spawn("./voiced");
 

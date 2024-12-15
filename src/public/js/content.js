@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () =>
     // uses a hidden <a> tag to automatically dowload via a link
     const hiddenDownloadLink = document.createElement("a");
     hiddenDownloadLink.href = audioUrl;
-    hiddenDownloadLink.download = "voice_output.wav";
+    hiddenDownloadLink.download = "voiced.mp3";
     hiddenDownloadLink.click();
 
     // Revoke the object URL to free up resources
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // uses a hidden <a> tag to automatically dowload via a link
     const hiddenDownloadLink = document.createElement("a");
     hiddenDownloadLink.href = audioUrl;
-    hiddenDownloadLink.download = "voice_output.wav";
+    hiddenDownloadLink.download = "voiced.mp3";
     hiddenDownloadLink.click();
 
     // Revoke the object URL to free up resources

@@ -1,15 +1,21 @@
 import { JSDOM } from "jsdom";
 import { IncomingMessage } from "http";
 import { get } from "https";
-import { Response, response } from "express";
 import { Parser } from "htmlparser2";
 import { Readable } from "stream";
 
+/**
+ * send the body of a url to a given stream
+ * @param url
+ * @param stream
+ * @returns chunks to stream
+ */
 export const crawlPageBody = async function async(
   url: string,
   stream: Readable
 ) {
   try {
+    // read the info of a url as a stream
     const toGetPageStream = () =>
       new Promise<IncomingMessage>((resolve, reject) => {
         get(url, (response) => {
@@ -25,6 +31,7 @@ export const crawlPageBody = async function async(
       });
     const getPageStream = await toGetPageStream();
 
+    // return error if recived something of wrong content type
     const contentType = getPageStream.headers["content-type"] as string;
     if (!contentType || !contentType.includes("text/html")) {
       console.log(
@@ -33,6 +40,7 @@ export const crawlPageBody = async function async(
       return;
     }
 
+    // inititlise a parser to read content only in body
     let inBody: boolean = false;
     const getBody = new Parser({
       onopentag(name, attribs) {
@@ -52,26 +60,27 @@ export const crawlPageBody = async function async(
       },
     });
 
-    // getPageStream.pipe(getBody)
-
-    // Stream response data in chunks
+    // Stream response data in getBody for it to pasrse the body
     for await (const chunk of getPageStream) {
       getBody.write(chunk.toString());
     }
     getBody.end();
+
+    // indicate end of input recived
     stream.push(null);
   } catch (err) {
-    console.error("Error crawling page:", err);
+    // indicate end of input recived
     stream.push(null);
+    // give error to parent function
+    throw new Error(`Error crawling page: ${err}`);
   }
 };
 
-export const unmarkupContent = async (url: string, htmlBody: string) => {
-  const dom = new JSDOM.fromURL();
-  const body = dom.window.document.querySelector("body").textContent;
-  return body;
-};
-
+/**
+ * return a array of urls found in a html body
+ * @param htmlBody
+ * @param baseURL
+ */
 export const getURLsFromHTML = (htmlBody: string, baseURL: string): void => {
   const urls = [] as any;
   const dom = new JSDOM(htmlBody);
@@ -95,16 +104,5 @@ export const getURLsFromHTML = (htmlBody: string, baseURL: string): void => {
       }
     }
   }
+  return urls;
 };
-
-export const normalizeURL = (URLstring: string): string => {
-  const urlObj = new URL(URLstring);
-  const hostPath = `${urlObj.hostname}${urlObj.pathname}`;
-  if (hostPath.length > 0 && hostPath.slice(-1) === "/") {
-    return hostPath.slice(0, -1);
-  }
-  return hostPath;
-};
-function resolve(response: any) {
-  throw new Error("Function not implemented.");
-}

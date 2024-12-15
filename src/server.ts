@@ -33,7 +33,7 @@ app.post("/api/link/voice", (req, res) => {
     const link = req.body.link;
     voiceWebPage(link, res);
     const headers = {
-      "Content-Type": "audio/wav",
+      "Content-Type": "audio/mp3",
     };
     res.writeHead(200, headers);
   } catch (err) {
@@ -47,7 +47,7 @@ app.post("/api/pdf/voice", (req, res) => {
     const file = req.files?.pdfFile;
     voicePdf(file, res);
     const headers = {
-      "Content-Type": "audio/wav",
+      "Content-Type": "audio/mp3",
     };
     res.writeHead(200, headers);
   } catch (err) {
