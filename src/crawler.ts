@@ -30,7 +30,6 @@ export const crawlPageBody = async function async(
         }).on("error", reject);
       });
     const getPageStream = await toGetPageStream();
-
     // return error if recived something of wrong content type
     const contentType = getPageStream.headers["content-type"] as string;
     if (!contentType || !contentType.includes("text/html")) {

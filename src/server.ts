@@ -31,15 +31,20 @@ app.get("/", (req, res) => {
 app.post("/api/link/voice", (req, res) => {
   try {
     const link = req.body.link;
+    console.log(link);
+    if (!link.includes("https://")) throw new Error("Invalid URL");
     voiceWebPage(link, res);
     const headers = {
       "Content-Type": "audio/mp3",
     };
     res.writeHead(200, headers);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (err.message.includes("Invalid URL")) {
+      res.status(400).json({ error: err.message });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
   }
-  return;
 });
 
 app.post("/api/pdf/voice", (req, res) => {

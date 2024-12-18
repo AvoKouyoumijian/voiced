@@ -1,0 +1,15 @@
+body {
+  width: 300px;
+  height: auto;
+  font-family: Arial, sans-serif;
+}
+
+button {
+  margin: 5px;
+  font-size: 14px;
+}
+
+p {
+  margin: 5px;
+  font-size: 14px;
+}

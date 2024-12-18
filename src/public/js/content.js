@@ -1,87 +1,95 @@
-// converts the current pages text to voice and outputs a proptabek downlaod
-document.addEventListener("DOMContentLoaded", () =>
-  document.getElementById("page").addEventListener("click", async () => {
-    // display the file downloading indicater
-    document.getElementById("downloading").style.display = "block";
-    // call the download link to voice api
-    const res = await fetch("/api/link/voice", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        link: "https://www.wagslane.dev/",
-      }),
-    });
-    // return error if api throws one
-    if (!res.ok) {
-      const errorDetails = await res.json();
-      console.error("Error:", errorDetails.error);
-      document.getElementById("downloading").hidden = false;
-      return;
-    }
+// keep track of selected file
+let file = null;
 
-    // create a blob file and a downlaod file object
-    const audioBlob = await res.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-
-    // uses a hidden <a> tag to automatically dowload via a link
-    const hiddenDownloadLink = document.createElement("a");
-    hiddenDownloadLink.href = audioUrl;
-    hiddenDownloadLink.download = "voiced.mp3";
-    hiddenDownloadLink.click();
-
-    // Revoke the object URL to free up resources
-    URL.revokeObjectURL(audioUrl);
-
-    // hide downloading toggle
-    document.getElementById("downloading").style.display = "none";
-  })
-);
+//get the link of the current url that the user is on
+const getCurrentUrl = async () => {
+  console.log("gettinn url");
+  const link = await chrome.runtime.sendMessage("getCurrentUrl");
+  return link;
+};
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("submitfile").addEventListener("click", async () => {
-    // display the file downloading indicater
+  document.getElementById("page").addEventListener("click", async () => {
     document.getElementById("downloading").style.display = "block";
-    const file = document.getElementById("file").files[0];
+    document.getElementById("error").style.display = "none";
+    const link = await getCurrentUrl();
 
-    const formData = new FormData();
-    formData.append("pdfFile", file);
-
-    const res = await fetch("/api/pdf/voice", {
+    if (!link) {
+      console.error(`link received from the background script. url: ${link}`);
+      document.getElementById("downloading").style.display = "none";
+      return;
+    }
+    const res = await fetch("http://127.0.0.1:2000/api/link/voice", {
       method: "POST",
-      body: formData,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ link: link }),
     });
 
-    // return error if api throws one
     if (!res.ok) {
       const errorDetails = await res.json();
-      console.error("Error:", errorDetails.error);
-      document.getElementById("downloading").hidden = false;
+      document.getElementById("downloading").style.display = "none";
+      if (res.status < 500) {
+        document.getElementById(
+          "error"
+        ).innerHTML = `needs to be a valid HTTPS url`;
+        document.getElementById("error").style.display = "block";
+      } else {
+        console.error("Error:", errorDetails.error);
+      }
       return;
     }
 
-    // create a blob file and a downlaod file object
     const audioBlob = await res.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
 
-    // uses a hidden <a> tag to automatically dowload via a link
     const hiddenDownloadLink = document.createElement("a");
     hiddenDownloadLink.href = audioUrl;
     hiddenDownloadLink.download = "voiced.mp3";
     hiddenDownloadLink.click();
 
-    // Revoke the object URL to free up resources
     URL.revokeObjectURL(audioUrl);
-
-    // hide downloading toggle
     document.getElementById("downloading").style.display = "none";
   });
-});
+  document
+    .getElementById("submitfile")
+    .addEventListener("click", async (event) => {
+      event.preventDefault();
+      document.getElementById("downloading").style.display = "block";
+      document.getElementById("error").style.display = "none";
+      const file = await chrome.runtime.sendMessage("retirveUploadedFile");
 
-function get_URL() {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    let current_URL = tabs[0].url;
-    chrome.runtime.sendMessage({ data: current_URL });
-  });
-}
+      const formData = new FormData();
+      formData.append("pdfFile", file);
+
+      const res = await fetch("http://127.0.0.1:2000/api/pdf/voice", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorDetails = await res.json();
+        document.getElementById("downloading").style.display = "none";
+        if (res.status < 500) {
+          document.getElementById(
+            "error"
+          ).innerHTML = `need to be a valid pdf file`;
+          document.getElementById("error").style.display = "block";
+        } else {
+          console.error("Error:", errorDetails.error);
+        }
+        return;
+      }
+
+      const audioBlob = await res.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const hiddenDownloadLink = document.createElement("a");
+      hiddenDownloadLink.href = audioUrl;
+      hiddenDownloadLink.download = "voiced.mp3";
+      hiddenDownloadLink.click();
+
+      URL.revokeObjectURL(audioUrl);
+      document.getElementById("downloading").style.display = "none";
+    });
+  document.getElementById("file").addEventListener("click", () => {});
+});
