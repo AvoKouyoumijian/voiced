@@ -1,5 +1,7 @@
 {
   "files.associations": {
-    "stdio.h": "c"
+    "*.toml": "toml",
+    "stdio.h": "c",
+    "types.h": "c"
   }
 }

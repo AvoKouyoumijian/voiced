@@ -16,7 +16,8 @@ class TrimText extends Transform {
     encoding: BufferEncoding,
     callback: TransformCallback
   ): void {
-    const transChunk = chunk.toString().replace(/[^a-zA-Z0-9 .,!?]/g, "");
+    const transChunk = chunk.toString().replace(/[^a-zA-Z0-9 .,!?]/g, "\n");
+    console.log(transChunk.toString());
     this.push(transChunk);
     callback();
   }
@@ -29,19 +30,20 @@ class TrimText extends Transform {
  * @returns voiced text to res
  */
 export const voiceWebPage = async (URL: string, res: Response) => {
-  // read a given urls body to the readable stream
-  const pageContent = new Readable({
-    read() {},
-  });
-  crawlPageBody(URL, pageContent);
+  try {
+    const pageContent = new Readable({
+      read() {},
+    });
 
-  // tirm the text of the url
-  const trimText = new TrimText();
-  pageContent.pipe(trimText);
+    await crawlPageBody(URL, pageContent);
 
-  // pipe the voice of the text to res
-  spawnVoice(trimText, res);
-  return;
+    const trimText = new TrimText();
+    pageContent.pipe(trimText);
+
+    spawnVoice(trimText, res);
+  } catch (err) {
+    throw err; // Rethrow to be caught by route handler
+  }
 };
 
 /**

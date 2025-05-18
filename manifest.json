@@ -26,7 +26,9 @@
     "notifications",
     "tabs",
     "activeTab",
-    "background"
+    "background",
+    "scripting",
+    "offscreen"
   ],
-  "host_permissions": ["http://*/*", "https://*/*", "http://127.0.0.1:2000/*"]
+  "host_permissions": ["http://127.0.0.1:2000/"]
 }

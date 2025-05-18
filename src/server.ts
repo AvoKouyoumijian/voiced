@@ -28,21 +28,31 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/html/index.html"));
 });
 
-app.post("/api/link/voice", (req, res) => {
+app.post("/api/link/voice", async (req, res) => {
   try {
     const link = req.body.link;
     console.log(link);
     if (!link.includes("https://")) throw new Error("Invalid URL");
-    voiceWebPage(link, res);
+    await voiceWebPage(link, res);
     const headers = {
       "Content-Type": "audio/mp3",
     };
     res.writeHead(200, headers);
   } catch (err) {
-    if (err.message.includes("Invalid URL")) {
-      res.status(400).json({ error: err.message });
+    if (
+      err.message.includes("Invalid URL") ||
+      err.message.includes("Invalid HTML")
+    ) {
+      res.status(400).json({
+        error: err.message,
+      });
+    } else if (err.message.includes("HTTP status 404")) {
+      // This catches the error from crawler.ts
+      res.status(404).json({
+        error: "The webpage could not be found. Please check the URL.",
+      });
     } else {
-      res.status(500).json({ error: err.message });
+      res.status(500).json(`${err.message}`);
     }
   }
 });

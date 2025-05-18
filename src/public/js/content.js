@@ -1,5 +1,6 @@
 // keep track of selected file
 let file = null;
+let storageId = -1;
 
 //get the link of the current url that the user is on
 const getCurrentUrl = async () => {
@@ -9,6 +10,7 @@ const getCurrentUrl = async () => {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  //listen for HTML page choosing
   document.getElementById("page").addEventListener("click", async () => {
     document.getElementById("downloading").style.display = "block";
     document.getElementById("error").style.display = "none";
@@ -50,6 +52,48 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(audioUrl);
     document.getElementById("downloading").style.display = "none";
   });
+
+  // document.getElementById("file").addEventListener("click", async () => {
+  //   chrome.runtime.sendMessage({
+  //     action: "triggerFileSelect",
+  //     offscreen: false,
+  //   });
+  //   console.log("here1");
+  //   // window.close();
+  // });
+
+  // popup.js
+  document.getElementById("file").addEventListener("click", () => {
+    // Create hidden file input in the popup
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".pdf";
+    fileInput.style.display = "none";
+
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Process the file immediately
+        const formData = new FormData();
+        formData.append("pdfFile", file);
+
+        try {
+          const response = await fetch("http://127.0.0.1:2000/api/pdf/voice", {
+            method: "POST",
+            body: formData,
+          });
+          // Handle response...
+        } catch (error) {
+          console.error("Upload failed:", error);
+        }
+      }
+    });
+
+    document.body.appendChild(fileInput);
+    fileInput.click(); // This works because it's triggered by user click
+    document.body.removeChild(fileInput);
+  });
+
   document
     .getElementById("submitfile")
     .addEventListener("click", async (event) => {
@@ -91,5 +135,16 @@ document.addEventListener("DOMContentLoaded", () => {
       URL.revokeObjectURL(audioUrl);
       document.getElementById("downloading").style.display = "none";
     });
-  document.getElementById("file").addEventListener("click", () => {});
+
+  // Listen for file selection completion
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "fileSelected") {
+      // Process the file immediately
+      file = new File([message.file.content], message.file.name, {
+        type: message.file.type,
+      });
+
+      document.getElementById("downloading").style.display = "block";
+    }
+  });
 });

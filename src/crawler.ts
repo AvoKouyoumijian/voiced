@@ -4,16 +4,57 @@ import { get } from "https";
 import { Parser } from "htmlparser2";
 import { Readable } from "stream";
 
+// define stack ADT:
+class Stack {
+  private items: any[];
+  private count: number;
+  constructor() {
+    this.items = [];
+    this.count = 0;
+  }
+
+  //add element to the top of the stack
+  push(element) {
+    this.items[this.count] = element;
+    this.count += 1;
+  }
+
+  //return and remove the top element in the stack
+  // returns undifined if stack is empty
+  pop() {
+    if (this.count == 0) return undefined;
+    let popItem = this.items[this.count - 1];
+    this.count -= 1;
+    return popItem;
+  }
+
+  // look at the topmost value in the stack without removing it
+  peek() {
+    return this.items[this.count - 1];
+  }
+
+  // return weather the stack is empty or not
+  isEmpty() {
+    return this.count === 0;
+  }
+
+  print() {
+    console.log("stack elements:");
+    for (let i = 0; i < this.count; i++) {
+      console.log(`${this.items[i]}`);
+    }
+    console.log("");
+  }
+}
+
 /**
  * send the body of a url to a given stream
  * @param url
  * @param stream
  * @returns chunks to stream
  */
-export const crawlPageBody = async function async(
-  url: string,
-  stream: Readable
-) {
+
+export const crawlPageBody = async (url: string, stream: Readable) => {
   try {
     // read the info of a url as a stream
     const toGetPageStream = () =>
@@ -39,12 +80,45 @@ export const crawlPageBody = async function async(
       return;
     }
 
-    // inititlise a parser to read content only in body
+    // inititlise a parser to read text only in body
     let inBody: boolean = false;
+    let tags = [
+      // Block text containers
+      "p",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "li",
+      "td",
+      "th",
+      "blockquote",
+      // Inline text containers
+      "span",
+      "a",
+      "strong",
+      "em",
+      "i",
+      "b",
+      "code",
+      "label",
+      "button",
+    ];
+    const s = new Stack();
     const getBody = new Parser({
       onopentag(name, attribs) {
-        if (name == "body") {
-          inBody = true;
+        if (s.isEmpty()) {
+          if (name == "body") {
+            s.push(name);
+            inBody = true;
+          }
+        } else {
+          if (tags.includes(name)) {
+            s.push(name);
+            inBody = true;
+          }
         }
       },
       ontext(text) {
@@ -52,9 +126,19 @@ export const crawlPageBody = async function async(
           stream.push(text);
         }
       },
+      // only pop if the closing tag matches or give invalid HTML error
       onclosetag(name) {
-        if (name == "body") {
+        if (tags.includes(name) && !s.isEmpty()) {
+          if (s.peek() !== name) {
+            throw new Error(
+              `Invalid HTML: Expected </${s.peek()}>, got </${name}>`
+            );
+          }
+          s.pop();
+          inBody = !s.isEmpty();
+        } else if (name == "body") {
           inBody = false;
+          s.pop();
         }
       },
     });
@@ -64,14 +148,12 @@ export const crawlPageBody = async function async(
       getBody.write(chunk.toString());
     }
     getBody.end();
-
-    // indicate end of input recived
     stream.push(null);
   } catch (err) {
     // indicate end of input recived
     stream.push(null);
     // give error to parent function
-    throw new Error(`Error crawling page: ${err}`);
+    throw err;
   }
 };
 
